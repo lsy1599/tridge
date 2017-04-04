@@ -25,7 +25,11 @@ SOURCES += main.cpp\
     Module/printers.cpp \
     Module/dbmonitor.cpp \
     settingsform.cpp \
-    Module/printerclient.cpp
+    Module/printerclient.cpp \
+    View/visitform.cpp \
+    View/visitdatetimeitem.cpp \
+    View/timeedititem.cpp \
+    View/visit.cpp
 
 HEADERS  += tridge.h \
     View/mainview.h \
@@ -36,10 +40,18 @@ HEADERS  += tridge.h \
     Module/printers.h \
     Module/dbmonitor.h \
     settingsform.h \
-    Module/printerclient.h
+    Module/printerclient.h \
+    View/visitform.h \
+    View/visitdatetimeitem.h \
+    View/timeedititem.h \
+    View/visit.h
 
 FORMS    += tridge.ui \
     View/mainview.ui \
     View/localview.ui \
     View/trackingsettingsview.ui \
-    settingsform.ui
+    settingsform.ui \
+    View/visitform.ui \
+    View/visitdatetimeitem.ui \
+    View/timeedititem.ui \
+    View/visit.ui
