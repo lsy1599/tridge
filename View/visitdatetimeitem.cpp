@@ -1,6 +1,6 @@
 #include "visitdatetimeitem.h"
 #include "ui_visitdatetimeitem.h"
-#include <QDebug>
+#include <QJsonArray>
 
 VisitDatetimeItem::VisitDatetimeItem(QDate date,QTime _t1,QTime _t2, QWidget *parent) :
     QWidget(parent),
@@ -10,52 +10,100 @@ VisitDatetimeItem::VisitDatetimeItem(QDate date,QTime _t1,QTime _t2, QWidget *pa
     init(date,_t1,_t2);
 }
 
-VisitDatetimeItem::VisitDatetimeItem(QWidget *parent):
+VisitDatetimeItem::VisitDatetimeItem(const QJsonObject &dt1t2, QWidget *parent):
     QWidget(parent),
     ui(new Ui::VisitDatetimeItem)
 {
     ui->setupUi(this);
 
+    QDate tempD=QDate::fromString(dt1t2.value("date").toString(),"dd.MM.yyyy");
+    QTime tempT1=QTime::fromString(dt1t2.value("t1").toString(),"hh:mm");
+    QTime tempT2=QTime::fromString(dt1t2.value("t2").toString(),"hh:mm");
+
+    init(tempD,tempT1,tempT2);
 }
 
 VisitDatetimeItem::~VisitDatetimeItem()
 {
     //delete tei;
-    for(int i=0;i<count;i++){
-        delete tei[i];
+    if(valid){
+        for(int i=0;i<count;i++){
+            delete tei[i];
+        }
+        free(tei);
     }
-    free(tei);
     delete ui;
+}
+
+bool VisitDatetimeItem::is_valid()
+{
+    return valid;
+}
+
+QJsonObject VisitDatetimeItem::toJson()
+{
+    QJsonArray arr;
+    QJsonObject obj;
+    obj.insert("date",d.toString("dd.MM.yyyy"));
+
+    for(int i=0;i<count;i++){
+        QTime tempT1,tempT2;
+        tempT1=tei[i]->getT1();
+        tempT2=tei[i]->getT2();
+        while(i+1<count){
+            if(tempT2==tei[i+1]->getT1()){
+                tempT2=tei[i+1]->getT2();
+                i++;
+            }
+            else
+                break;
+        }
+        QJsonObject interval;
+        interval.insert("t1",tempT1.toString("hh:mm"));
+        interval.insert("t2",tempT2.toString("hh:mm"));
+        arr.append(interval);
+    }
+    obj.insert("time_enum",arr);
+    return obj;
+}
+
+bool VisitDatetimeItem::is_Checked()
+{
+    return ui->checkBox->isChecked();
 }
 
 
 void VisitDatetimeItem::init(QDate date, const QTime &_t1, const QTime &_t2)
 {
-    d=date;
-    ui->datel->setText(d.toString(" dd.MM.yyyy"));
+    valid=false;
+    if(date.isValid()&&_t1.isValid()&&_t2.isValid()){
+        valid=true;
+        d=date;
+        ui->datel->setText(d.toString("dd.MM.yyyy"));
 
-    t1=_t1; t2=_t2;
-    if(_t2<_t1){
-        t1=_t2;
-        t2=_t1;
+        t1=_t1; t2=_t2;
+        if(_t2<_t1){
+            t1=_t2;
+            t2=_t1;
+        }
+
+        max=(t2.addMSecs(-t1.msecsSinceStartOfDay()).msecsSinceStartOfDay()/1000/60/60);
+        count=1;
+
+        tei=(TimeEditItem**)malloc(sizeof(TimeEditItem*));
+        tei[0]=new TimeEditItem(0);
+        tei[0]->setList1(t1,t2.addSecs(-60*60));
+        tei[0]->setList2(t1.addSecs(60*60),t2);
+        tei[0]->setT2(t2);
+        connect(tei[0],SIGNAL(chng1(QTime,int)),this,SLOT(chng1(QTime,int)));
+        connect(tei[0],SIGNAL(chng2(QTime,int)),this,SLOT(chng2(QTime,int)));
+
+        ui->gridLayout->addWidget(tei[0],0,2);
+
+        ui->deltime->setEnabled(false);
+        //ui->deltime->setEnabled();
+        this->setMinimumHeight(35*count);
     }
-
-    max=(t2.addMSecs(-t1.msecsSinceStartOfDay()).msecsSinceStartOfDay()/1000/60/60);
-    count=1;
-
-    tei=(TimeEditItem**)malloc(sizeof(TimeEditItem*));
-    tei[0]=new TimeEditItem(0);
-    tei[0]->setList1(t1,t2.addSecs(-60*60));
-    tei[0]->setList2(t1.addSecs(60*60),t2);
-    tei[0]->setT2(t2);
-    connect(tei[0],SIGNAL(chng1(QTime,int)),this,SLOT(chng1(QTime,int)));
-    connect(tei[0],SIGNAL(chng2(QTime,int)),this,SLOT(chng2(QTime,int)));
-
-    ui->gridLayout->addWidget(tei[0],0,2);
-
-    ui->deltime->setEnabled(false);
-    //ui->deltime->setEnabled();
-    this->setMinimumHeight(35*count);
 }
 
 void VisitDatetimeItem::teiBS(bool value)
@@ -174,10 +222,7 @@ void VisitDatetimeItem::chng2(QTime t, int i)
     tei[i]->setT2(tempT2);
     teiBS(false);
 
-    //tempT1=getT1();
     tei[i]->emitchng1();
-    //tei[i]->setT1(tei[i]->getT1());
-    //if()
 }
 
 

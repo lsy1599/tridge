@@ -1,36 +1,49 @@
 #include "visitform.h"
 #include "ui_visitform.h"
-#include <QSplitter>
-#include <QJsonDocument>
-#include <QJsonObject>
-#include <QDebug>
 
-VisitForm::VisitForm(QWidget *parent) :
+/// Описание визит формы
+/// это форма
+VisitForm::VisitForm(const QJsonArray &dateArr, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VisitForm)
 {
     ui->setupUi(this);
-    //centralVBox=new QVBoxLayout;
-    int N=10;
-    //QJsonDocument doc;
-    //QJsonObject obj;
-    //obj.insert("date",);
-
-    //qDebug()<<obj;
-    VisitDatetimeItem** dtitems=(VisitDatetimeItem**)malloc(N*sizeof(VisitDatetimeItem*));
-    for(int i=0;i<N;i++){
-        dtitems[i]=new VisitDatetimeItem(QDate::currentDate().addDays(i),QTime(10+i%3,i%2*30),QTime(17+i%4,(i+3)%2*30));
-        layout()->addWidget(dtitems[i]);
-
+    N=0;
+    dtitems=NULL;
+    if(dateArr.count()>1){
+        N=dateArr.count();
+        dtitems=(VisitDatetimeItem**)malloc(N*sizeof(VisitDatetimeItem*));
+        for(int i=0;i<N;i++){
+            dtitems[i]=new VisitDatetimeItem(dateArr.at(i).toObject());
+            if(dtitems[i]->is_valid()){
+                layout()->addWidget(dtitems[i]);
+            }
+        }
     }
-    //QSplitter* split=new QSplitter(Qt::Vertical);
-
     layout()->addWidget(new QSplitter(Qt::Vertical));
-
     this->show();
 }
 
+QJsonArray VisitForm::toJson()
+{
+    QJsonArray mass;
+    for(int i=0;i<N;i++){
+        if(dtitems[i]->is_Checked()){
+            mass.append(dtitems[i]->toJson());
+        }
+    }
+    return mass;
+    //конвертировать все даты в json и вернуть
+}
+
+
+
 VisitForm::~VisitForm()
 {
+    for(int i=0;i<N;i++){
+        delete dtitems[i];
+    }
+    if(dtitems)
+        free(dtitems);
     delete ui;
 }

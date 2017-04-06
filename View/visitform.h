@@ -6,8 +6,14 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QPushButton>
-#include "View/visitdatetimeitem.h"
+#include <QSplitter>
 #include <QDate>
+#include <QDebug>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
+#include "View/visitdatetimeitem.h"
+
 namespace Ui {
 class VisitForm;
 }
@@ -17,7 +23,9 @@ class VisitForm : public QWidget
     Q_OBJECT
 
 public:
-    explicit VisitForm(QWidget *parent = 0);
+    VisitForm(const QJsonArray &dateArr,QWidget *parent = 0);
+    QJsonArray toJson();
+
     ~VisitForm();
 
 private:
@@ -25,6 +33,7 @@ private:
     QVBoxLayout *centralVBox;
     //QLabel *text;
     VisitDatetimeItem **dtitems;
+    int N;
 
 
 
